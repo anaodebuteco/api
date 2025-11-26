@@ -1,0 +1,153 @@
+openapi: 3.0.3
+info:
+  title: API de Tarefas
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /auth/signup:
+    post:
+      summary: Cadastro de usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 60 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        "201":
+          description: Usuário criado
+        "409":
+          description: E-mail já cadastrado
+        "400":
+          description: Dados inválidos
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        "200":
+          description: OK (retorna token)
+        "401":
+          description: Credenciais inválidas
+  /tasks:
+    get:
+      summary: Lista tarefas do usuário
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, in_progress, done] }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+        "401": { description: Não autenticado }
+    post:
+      summary: Cria tarefa
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, minLength: 3, maxLength: 120 }
+                description: { type: string, maxLength: 500 }
+                status: { type: string, enum: [pending, in_progress, done] }
+                dueDate: { type: string, format: date-time }
+      responses:
+        "201": { description: Criado }
+        "400": { description: Dados inválidos ou regra de negócio }
+        "401": { description: Não autenticado }
+  /tasks/{id}:
+    get:
+      summary: Busca tarefa por ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+        "403": { description: Proibido }
+        "404": { description: Não encontrada }
+    put:
+      summary: Atualiza tarefa
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, minLength: 3, maxLength: 120 }
+                description: { type: string, maxLength: 500 }
+                status: { type: string, enum: [pending, in_progress, done] }
+                dueDate: { type: string, format: date-time }
+      responses:
+        "200": { description: OK }
+        "400": { description: Dados inválidos }
+        "403": { description: Proibido }
+        "404": { description: Não encontrada }
+    patch:
+      summary: Atualiza parcialmente tarefa
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200": { description: OK }
+        "400": { description: Dados inválidos }
+        "403": { description: Proibido }
+        "404": { description: Não encontrada }
+    delete:
+      summary: Deleta tarefa
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Sem conteúdo }
+        "403": { description: Proibido }
+        "404": { description: Não encontrada }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
